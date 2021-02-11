@@ -37,10 +37,6 @@ def createQ(input_fasta: str, output_fastq: str, kmer: int, read: int):
 @click.option('-a', '--aa', is_flag=True, default=True, help='Write fasta file of amino acid sequences from assembly')
 @click.option('-c', '--curated', default=True, is_flag=True, help='Choose between manually/automatic curated results')
 @click.option('-h', '--hits', default=5, help='Number of hits to be displayed per AA sequence')
-@click.option('-r', '--ranked', default=True, is_flag=True, help='Choose if the results are ranked as per E-value')
-@click.option('-b', '--blast', default=True, is_flag=True, help='Write csv file of predicted protein information')
-@click.option('-u', '--uniprot', default=False, is_flag=True, help='Write csv file of Uniprot information')
-@click.option('-e', '--ensembl', default=False, is_flag=True, help='Write csv file of Ensembl information')
 def predictQ(input_fasta: str, output_path: str, kmer: int, contig: bool, rna: bool, aa: bool,
              curated: bool, hits: int, ranked: bool, blast: bool, uniprot: bool, ensembl: bool):
     """
@@ -63,25 +59,8 @@ def predictQ(input_fasta: str, output_path: str, kmer: int, contig: bool, rna: b
         write_fasta(os.path.join(output_path, 'orfs_{}{}'.format(contigID, '.fasta')), prediction.found_orfs())
 
     blast_request = ApiProcessor(prediction.found_orfs(), curated=curated, hits=hits)
-    blast_request.api_request()
-
-    if ranked:
-        blast_request.ranking()
-
-    blast_request.api_request_to_uniprot_id()
-    blast_request.uniprot_id_to_ensembl_id()
-    blast_request.wrapper()
-
-    if blast:
-        query_df = blast_request.QUERY_DF
-        query_df.to_csv(os.path.join(output_path, "blast_dataframe.csv"), encoding='utf-8')
-    if uniprot:
-        uniprot_df = blast_request.UNIPROT_DF
-        uniprot_df.to_csv(os.path.join(output_path, "uniprot_dataframe.csv"), encoding='utf-8')
-    if ensembl:
-        ensembl_df = blast_request.ENSEMBL_DF
-        ensembl_df.to_csv(os.path.join(output_path, "ensembl_dataframe.csv"), encoding='utf-8')
-
+    blast_df = blast_request.request_to_pandas()
+    blast_df.to_csv(os.path.join(output_path, "blast_dataframe.csv")
 
 if __name__ == "__main__":
     main()
